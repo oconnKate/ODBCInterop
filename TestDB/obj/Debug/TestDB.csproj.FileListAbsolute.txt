@@ -1,0 +1,7 @@
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\bin\Debug\TestDB.dll
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\bin\Debug\TestDB.pdb
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\bin\Debug\ODBCInterop.dll
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\bin\Debug\ODBCInterop.pdb
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\obj\Debug\TestDB.csprojResolveAssemblyReference.cache
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\obj\Debug\TestDB.dll
+C:\Users\continent\documents\visual studio 2012\Projects\ODBCInterop\TestDB\obj\Debug\TestDB.pdb

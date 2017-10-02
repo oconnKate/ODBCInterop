@@ -1,0 +1,4 @@
+c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Release\ODBCInterop.dll
+c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Release\ODBCInterop.pdb
+c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Release\ODBCInterop.dll
+c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Release\ODBCInterop.pdb
