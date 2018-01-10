@@ -1,4 +1,3 @@
-c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Debug\ODBCInterop.csprojResolveAssemblyReference.cache
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Debug\ODBCInterop.dll
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Debug\ODBCInterop.pdb
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Debug\ODBCInterop.dll

@@ -19,11 +19,11 @@ namespace ODBCConnection
         Timestamp = 93
 
     }
-    public enum NullableValue : short 
+    public enum NullableValue : short
     {
-    Yes = 1,
-    No = 2,
-    Unknown = 3
+        Yes = 1,
+        No = 2,
+        Unknown = 3
     }
     // для возможности строкового возвращения типа данных
     public static class DataTypes
@@ -39,11 +39,15 @@ namespace ODBCConnection
                 {7, "Real"},
                 {8, "Double"},
                 {9, "DateTime"},
+                {10,"SybaseTime"},
                 {11, "Timestamp"},
                 {12, "Varchar"},
                 {91, "Date"},
                 {92, "Time"}, 
-                {93, "Timestamp"}
+                {93, "Timestamp"},
+                {-2,"SybaseBinary"},
+                {-4,"SybaseLongBinary"},
+                {-1, "SybaseLongVarChar"}
              };
         public static Dictionary<string, int> DataNumberByType
            = new Dictionary<string, int>
@@ -59,7 +63,11 @@ namespace ODBCConnection
                 { "Varchar",12},
                 { "Date",91},
                 {"Time",92}, 
-                {"Timestamp",93}
+                {"Timestamp",93},
+                {"Binary",-2},
+                {"SybaseLongBinary",-4},
+                {"SybaseLongVarChar",-1},
+                {"SybaseTime",10}
               
             };
     }

@@ -1,6 +1,7 @@
 ﻿namespace ODBCNative
 {
-    public enum ODBCResult : short
+    //standart odbc functions result 
+    public enum ODBCResult : short //Defined in sql.h
     {
         Error = -1,
         InvalidHandle = -2,

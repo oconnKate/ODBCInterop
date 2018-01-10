@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace ODBCConnection
 {
     //описание интересующих колонок в результирующем наборе
-    internal abstract class BaseDefinition
+    public abstract class BaseDefinition
     {
         public short[] Indexes;
         public ODBCDataType[] Types;
@@ -13,13 +13,13 @@ namespace ODBCConnection
         abstract public string GetListOfFields();
     }
     // для SQLColumns
-    internal class ColumnsStatementDefinition : BaseDefinition
+    public class ColumnsStatementDefinition : BaseDefinition
     {
         public ColumnsStatementDefinition()
         {
-            Indexes = new short[] { 4, 5, 7, 9, 18,11 };
+            Indexes = new short[] { 4, 5, 7, 9, 18, 11 };
             Types = new ODBCDataType[] { ODBCDataType.Char, ODBCDataType.Integer, ODBCDataType.Integer, ODBCDataType.Integer, ODBCDataType.Char, ODBCDataType.Integer };
-            Lengths = new int[] { 150, 4, 4, 4, 150,4 };
+            Lengths = new int[] { 150, 4, 4, 4, 150, 4 };
         }
         public override string GetListOfFields()
         {
@@ -28,7 +28,7 @@ namespace ODBCConnection
 
     }
     // для SQLTables
-    internal class TablesStatementDefinition : BaseDefinition
+    public class TablesStatementDefinition : BaseDefinition
     {
         public TablesStatementDefinition()
         {
@@ -43,7 +43,7 @@ namespace ODBCConnection
 
     }
     // для SQLPrimaryKeys
-    internal class PrimaryKeyStatementDefinition : BaseDefinition
+    public class PrimaryKeyStatementDefinition : BaseDefinition
     {
         public PrimaryKeyStatementDefinition()
         {
@@ -57,7 +57,7 @@ namespace ODBCConnection
         }
     }
     // для SQLStatisctics
-    internal class IndexStatementDefinition : BaseDefinition
+    public class IndexStatementDefinition : BaseDefinition
     {
         public IndexStatementDefinition()
         {
@@ -72,7 +72,7 @@ namespace ODBCConnection
         }
     }
     //вспомогательный класс для сохранения данных, считанных из функций ODBC
-    internal class BufferData
+    public class BufferData
     {
         internal int intVal;
         internal string strVal = String.Empty;
@@ -88,8 +88,12 @@ namespace ODBCConnection
         public bool IsUnique { get { return (_isUnique == 0); } }
         public string IndexName { get { return _indexName; } }
         public bool IsAsc { get { return _isAsc[0] == 'A'; } }
-        public int ColumnCount { get { return _data.Count; } }
         internal Dictionary<string, BufferData> Values = new Dictionary<string, BufferData>();
+        public bool ContainsField(string Name, out ColumnData out_res)
+        {
+            out_res = _data.Find(T => { return T.ColumnName == Name; });
+            return out_res != null;
+        }
         public IEnumerable<ColumnData> NextColumn()
         {
             foreach (var record in _data)
@@ -99,13 +103,13 @@ namespace ODBCConnection
 
         }
 
-        internal void SetData(int isUnique, string indexName, string isAsc)
+        public void SetData(int isUnique, string indexName, string isAsc)
         {
             _isUnique = isUnique;
             _indexName = indexName;
             _isAsc = isAsc;
         }
-        internal void AddColumnData(ColumnData columnData)
+        public void AddColumnData(ColumnData columnData)
         {
             if (_data == null) { _data = new List<ColumnData>(); }
             _data.Add(columnData);
@@ -149,8 +153,8 @@ namespace ODBCConnection
     {
         private string _columnName;
         private int _columnSequence;
-        public string ColumnName {  get{return _columnName;} }//имя колонки
-        public int ColumnSequence {  get { return _columnSequence; }  }//последовательность в индексе
+        public string ColumnName { get { return _columnName; } }//имя колонки
+        public int ColumnSequence { get { return _columnSequence; } }//последовательность в индексе
         public ColumnData(string columnName, int columnSequence)
         {
             _columnName = columnName;
@@ -166,7 +170,7 @@ namespace ODBCConnection
         private string _columnName;
         private int _isNullableInt;
         public string ColumnName { get { return _columnName; } }
-        public NullableValue isNullable { get { switch (_isNullable) { case "YES":return NullableValue.Yes;  case "NO": return NullableValue.No; default: return NullableValue.Unknown; } } }
+        public NullableValue isNullable { get { switch (_isNullable) { case "YES":return NullableValue.Yes; case "NO": return NullableValue.No; default: return NullableValue.Unknown; } } }
         public string isNullableStr { get { return _isNullable; } }
         public int isNullableInt { get { return _isNullableInt; } set { _isNullableInt = value; } }
         public string DataType
@@ -181,12 +185,13 @@ namespace ODBCConnection
         }
         public int DataSize { get { return _dataSize; } }
         public int DecimalDigits { get { return _decimalDigits; } }
-        internal ColumnDescription(string columnName, int dataType, string isNullable, int dataSize = 0, int decimalDigits = 0, int isNullableInt=1)
+
+        public ColumnDescription(string columnName, int dataType, string isNullable, int dataSize = 0, int decimalDigits = 0, int isNullableInt = 1)
         {
             string value = string.Empty;
             if (!DataTypes.DataTypeByNumber.TryGetValue(dataType, out value))
             { throw new Exception("Unknown data type int value - " + _dataType.ToString()); }
-           _columnName = columnName;
+            _columnName = columnName;
             _dataType = dataType;
             _isNullable = isNullable;
             _dataSize = dataSize;
@@ -196,12 +201,12 @@ namespace ODBCConnection
 
     }
     public class ODBCSources
-    { 
-    private string _serverName;
-    private string _description;
-    public string ServerName { get { return _serverName; } }
-    public string Description { get { return _description; } }
-        public  ODBCSources(string serverName, string description)
+    {
+        private string _serverName;
+        private string _description;
+        public string ServerName { get { return _serverName; } }
+        public string Description { get { return _description; } }
+        public ODBCSources(string serverName, string description)
         {
             _serverName = serverName;
             _description = description;

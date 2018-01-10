@@ -36,8 +36,6 @@ namespace ODBCNative
                 out IntPtr outputHandle);
 
 
-
-
             [DllImport("odbc32.dll", SetLastError = false)]
             internal static extern ODBCResult SQLDisconnect(
                 ODBCHConnection connectionHandle);
@@ -53,8 +51,7 @@ namespace ODBCNative
                  short bufferLength,
                  out short bufferLengthNeeded,
                  short fDriverCompletion);
-
-
+            
 
             [DllImport("odbc32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
             internal static extern ODBCResult SQLGetDiagRecW(
@@ -66,7 +63,6 @@ namespace ODBCNative
                 StringBuilder messageBuffer,
                 short bufferLength,
                 out short bufferLengthNeeded);
-
 
 
             [DllImport("odbc32.dll", SetLastError = false)]
@@ -166,6 +162,8 @@ namespace ODBCNative
                out short StringLengthPtr);
 
             [DllImport("odbc32.dll", SetLastError = false)]
+            //информация о драйвере и об источнике данных выбранного соединения
+            //прототип для для строковой информации
             public static extern ODBCResult SQLGetInfo(
                 ODBCHConnection connectionHandle,
               ushort InfoType,
@@ -174,14 +172,17 @@ namespace ODBCNative
               out short StringLengthPtr);
 
             [DllImport("odbc32.dll", SetLastError = false)]
+            //информация о драйвере и об источнике данных выбранного соединения
+            //прототип для для целочисленной информации
             public static extern ODBCResult SQLGetInfo(
                 ODBCHConnection connectionHandle,
               ushort InfoType,
-            out  ushort InfoValue,
+              out  ushort InfoValue,
               short BufferLength,
               out short StringLengthPtr);
 
             [DllImport("odbc32.dll", SetLastError = false)]
+            // перечень источников данных
             public static extern ODBCResult SQLDataSources(
                 ODBCHEnvironment enviromentHandle,
                 ushort Direction,
@@ -191,6 +192,34 @@ namespace ODBCNative
                 StringBuilder Description,
                 short BufferLength2,
                 out short NameLength2Ptr);
+
+            [DllImport("odbc32.dll", SetLastError = false)]
+            //выполнение sql-команды
+            public static extern ODBCResult SQLExecDirectW(
+                ODBCHStatement statementHandle,
+          string statementText,
+            int textLength
+                );
+
+            [DllImport("odbc32.dll", SetLastError = false)]
+            //установка атрибутов соединения
+            //целочисленное значение атрибута
+            public static extern ODBCResult SQLSetConnectAttr(
+              ODBCHConnection nStatementHandle,
+               int Attribute,
+               int ValuePtr,
+               int eExpression
+                );
+
+            [DllImport("odbc32.dll", SetLastError = false)]
+            //установка атрибутов соединения
+            //строковое значение атрибута
+            public static extern ODBCResult SQLSetConnectAttr(
+              ODBCHConnection nStatementHandle,
+               int Attribute,
+               string ValuePtr,
+               int eExpression
+                );
             #endregion
         }
 
@@ -198,12 +227,13 @@ namespace ODBCNative
         //оболочки для вызова внешних функций 
         internal static string ReadString(IntPtr pointer)
         {
+            if (pointer == IntPtr.Zero) throw new ArgumentNullException("Null pointer in read string operation");
             return Marshal.PtrToStringAnsi(pointer);
         }
 
         internal static short ReadShort(IntPtr pointer)
         {
-            return Marshal.ReadInt16(pointer);
+            if (pointer == IntPtr.Zero) throw new ArgumentNullException("Null pointer in read int operation"); return Marshal.ReadInt16(pointer);
         }
         internal static bool AllocateHandle(ODBCHType handleType, IntPtr inputHandle, out IntPtr outputHandle)
         {
@@ -211,6 +241,7 @@ namespace ODBCNative
             IntPtr handle = IntPtr.Zero;
             var result = ODBCNativeMethods.SQLAllocHandle(handleType, inputHandle, out handle);
             outputHandle = handle;
+
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw new ODBCAPIError("Can't allocate environment handle ");
@@ -240,28 +271,23 @@ namespace ODBCNative
             {
                 throw GetException(inputHandle, "Error allocating statement handle");
             }
+
             return true;
         }
         internal static bool SQLBindColumn(ODBCHStatement statementHandle, ODBCData column)
         {
-
-
             var result = ODBCNativeMethods.SQLBindCol(statementHandle, column.ColumnNumber, column.ColumnType, column.ColumnData, column.ColumnDataLength, out column.ColumnDataRealLength);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error binding columns");
             }
             return true;
         }
-       
-        internal static bool SQLBindColumn(ODBCHStatement statementHandle, short ColumnNumber,  ODBCDataType TargetType, StringBuilder TargetValue,int BufferLength, out int StrLen_or_ind)
+
+        internal static bool SQLBindColumn(ODBCHStatement statementHandle, short ColumnNumber, ODBCDataType TargetType, StringBuilder TargetValue, int BufferLength, out int StrLen_or_ind)
         {
-
-
             var result = ODBCNativeMethods.SQLBindCol(statementHandle, ColumnNumber, TargetType, TargetValue, BufferLength, out StrLen_or_ind);
-
-            if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
+          if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error binding columns");
             }
@@ -270,7 +296,6 @@ namespace ODBCNative
         internal static bool GetTableColumns(ODBCHStatement statementHandle, string schemaName, string tableName)
         {
             var result = ODBCNativeMethods.SQLColumns(statementHandle, string.Empty, 0, schemaName, (short)schemaName.Length, tableName, (short)tableName.Length, String.Empty, (short)0);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error getting column list");
@@ -279,10 +304,7 @@ namespace ODBCNative
         }
         internal static bool GetTables(ODBCHStatement statementHandle, string catalogName, string schemaName, string tableName)
         {
-
-
             var result = ODBCNativeMethods.SQLTables(statementHandle, catalogName, (short)(catalogName.Length), schemaName, (short)(schemaName.Length), tableName, (short)(tableName.Length), String.Empty, (short)0);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error getting table list");
@@ -293,7 +315,6 @@ namespace ODBCNative
         internal static bool GetPrimKey(ODBCHStatement statementHandle, string schemaName, string tableName)
         {
             var result = ODBCNativeMethods.SQLPrimaryKeys(statementHandle, String.Empty, (short)0, schemaName, (short)schemaName.Length, tableName, (short)tableName.Length);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error getting primary key definition");
@@ -303,9 +324,7 @@ namespace ODBCNative
 
         internal static bool GetIndexInfo(ODBCHStatement statementHandle, string schemaName, string tableName, ushort indexType)
         {
-
             var result = ODBCNativeMethods.SQLStatistics(statementHandle, String.Empty, (short)0, schemaName, (short)schemaName.Length, tableName, (short)tableName.Length, indexType, 0);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(statementHandle, "Error getting index definition");
@@ -316,7 +335,6 @@ namespace ODBCNative
         internal static bool Fetch(ODBCHStatement statementHandle)
         {
             var result = ODBCNativeMethods.SQLFetch(statementHandle);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo) & (result != ODBCResult.NoData))
             {
                 throw GetException(statementHandle, "Error fetching data");
@@ -330,7 +348,6 @@ namespace ODBCNative
         {
             IntPtr handle;
             var result = ODBCNativeMethods.SQLAllocHandle(ODBCHType.Environment, IntPtr.Zero, out handle);
-
             if ((result != ODBCResult.Success) && (result != ODBCResult.SuccessWithInfo))
             {
                 throw new ODBCAPIError("Unable to allocate ODBC environment handle.");
@@ -342,14 +359,10 @@ namespace ODBCNative
         internal static IntPtr AllocateStatementHandle(ODBCHConnection connectionHandle)
         {
             if (connectionHandle == null) throw new ArgumentNullException("connectionHandle");
-
             IntPtr handle;
             var result = ODBCNativeMethods.SQLAllocHandle(ODBCHType.Statement, connectionHandle, out handle);
-
             if ((result == ODBCResult.Success) || (result == ODBCResult.SuccessWithInfo)) return handle;
-
             var ex = GetException(connectionHandle, "Unable to allocate ODBC statement handle.");
-
             throw ex;
         }
 
@@ -363,9 +376,7 @@ namespace ODBCNative
 
             short bufferLengthNeeded;
             StringBuilder outString = new StringBuilder(1024);
-
             var result = ODBCNativeMethods.SQLDriverConnectW(connectionHandle, IntPtr.Zero, connectionString, (short)connectionString.Length, outString, (short)outString.Capacity, out bufferLengthNeeded, driverParam);
-
             if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
             {
                 throw GetException(connectionHandle, "Unnable to connect using connection string " + connectionString);
@@ -377,13 +388,9 @@ namespace ODBCNative
         {
             if (connectionHandle != null)
             {
-
                 var result = ODBCNativeMethods.SQLDisconnect(connectionHandle);
-
                 if ((result == ODBCResult.Success) || (result == ODBCResult.SuccessWithInfo)) return;
-
                 var ex = GetException(connectionHandle, "Unable to disconnect the database.");
-
                 throw ex;
             }
         }
@@ -398,18 +405,15 @@ namespace ODBCNative
         {
             if (environmentHandle != null)
             {
-
                 var result = ODBCNativeMethods.SQLSetEnvAttr(environmentHandle, attribute, value, 0);
-
                 if ((result != ODBCResult.Success) && (result != ODBCResult.SuccessWithInfo))
                 {
                     var ex = GetException(environmentHandle, string.Format("Unable to set ODBC environment attribute '{0:G}'.", attribute));
-
                     throw ex;
                 }
             }
         }
-       
+
         internal static bool GetConnectionInfoString(ODBCHConnection connectionHandle, ushort infoType, out StringBuilder resultStr)
         {
             resultStr = new StringBuilder();
@@ -426,7 +430,6 @@ namespace ODBCNative
                     if ((result != ODBCResult.Success) && (result != ODBCResult.SuccessWithInfo))
                     {
                         var ex = GetException(connectionHandle, string.Format("Unable to get information  about data source code '{0}'.", infoType.ToString()));
-
                         throw ex;
                     }
 
@@ -449,10 +452,8 @@ namespace ODBCNative
             if ((result != ODBCResult.Success) && (result != ODBCResult.SuccessWithInfo))
             {
                 var ex = GetException(connectionHandle, string.Format("Unable to get information  about data source code '{0}'.", infoType.ToString()));
-
                 throw ex;
             }
-
             return true;
         }
         internal static ODBCResult GetDataSources(ODBCHEnvironment enviromentHandle, ushort direction, out StringBuilder serverName, out StringBuilder description)
@@ -469,14 +470,14 @@ namespace ODBCNative
                 if (nameLength1Ptr > 0)
                 {
                     serverName.Capacity = nameLength1Ptr + 2;
-                    bufferLength1 =(short) (nameLength1Ptr + 2);
+                    bufferLength1 = (short)(nameLength1Ptr + 2);
                     if (nameLength2Ptr > 0)
                     {
                         description.Capacity = nameLength2Ptr + 2;
                         bufferLength2 = (short)(nameLength2Ptr + 2);
                     }
                     res = ODBCNativeMethods.SQLDataSources(enviromentHandle, direction, serverName, bufferLength1, out nameLength1Ptr, description, bufferLength2, out nameLength2Ptr);
-                    if ((res != ODBCResult.Success) && (res != ODBCResult.SuccessWithInfo) && (res!=ODBCResult.NoData))
+                    if ((res != ODBCResult.Success) && (res != ODBCResult.SuccessWithInfo) && (res != ODBCResult.NoData))
                     {
                         var ex = GetException(enviromentHandle, "Unable to get ODBC data sources list ");
                         throw ex;
@@ -487,6 +488,7 @@ namespace ODBCNative
         }
         internal static bool GetConnectionInfo(ODBCHConnection connectionHandle, ushort infoType, out String resultStr)
         {
+
             short _bufferLength = 0;
             short _stringLengthPtr = 0;
             IntPtr Value = IntPtr.Zero;
@@ -502,7 +504,6 @@ namespace ODBCNative
                     if ((result == ODBCResult.Success) || (result == ODBCResult.SuccessWithInfo))
                     {
                         resultStr = Marshal.PtrToStringAnsi(Value);
-
                     }
                     else
                     {
@@ -518,6 +519,44 @@ namespace ODBCNative
             var ex = GetException(connectionHandle, string.Format("Unable to get information  about data source code '{0}'.", infoType.ToString()));
             throw ex;
         }
+        public static bool ExecDirect(ODBCHStatement statementHandle, string statementText, int textLength, out string info)
+        {
+            info = string.Empty;
+            if (statementText == null)
+            { throw new ArgumentNullException("Command string is empty"); }
+            if (statementText.Trim() == "")
+            {
+                throw new ArgumentException("Command string is empty");
+            }
+
+            var result = ODBCNativeMethods.SQLExecDirectW(statementHandle, statementText, textLength);
+            if ((result != ODBCResult.Success) & (result != ODBCResult.SuccessWithInfo))
+            {
+                throw GetException(statementHandle, "Unnable to execute sql command " + statementText);
+            }
+            if (result == ODBCResult.SuccessWithInfo)
+            {
+                var list_info = GetErrorInfo(statementHandle);
+                if (list_info.Count > 0)
+                {
+                    info = list_info[0].EMessage;
+                }
+            }
+
+            return true;
+        }
+
+        public static bool SetConnectionProp(ODBCHConnection nStatementHandle, short cSetting, int eExpression)
+        {
+            var result = ODBCNativeMethods.SQLSetConnectAttr(nStatementHandle, cSetting, eExpression, 0);
+
+            if (result != ODBCResult.Success)
+            {
+                throw GetException(nStatementHandle, "Unnable to set connection property ");
+            }
+            return true;
+        }
+
         #endregion
 
         #region exceptions
@@ -527,7 +566,6 @@ namespace ODBCNative
             public string ECode { get; private set; }
             public string EMessage { get; private set; }
             public string ENativeCode { get; private set; }
-
             public ODBCErrorInfo(string eCode, string eNCode, string eMessage)
             {
                 ECode = eCode;
@@ -539,23 +577,18 @@ namespace ODBCNative
         private static List<ODBCErrorInfo> GetErrorInfo(ODBCHBase handle)
         {
             var eList = new List<ODBCErrorInfo>();
-
             short start = 1;
             var messageBuffer = new StringBuilder(256);
             var stateBuffer = new StringBuilder(5);
             int nativeError;
             short bufferLengthNeeded;
             var resultString = new StringBuilder();
-
-
             while (true)
             {
                 var result = ODBCNativeMethods.SQLGetDiagRecW(handle.HandleType, handle, start, stateBuffer, out nativeError, messageBuffer, (short)messageBuffer.Capacity, out bufferLengthNeeded);
-
                 if (result == ODBCResult.SuccessWithInfo)
                 {
                     bufferLengthNeeded = (short)((int)bufferLengthNeeded + 1);
-
                     if (messageBuffer.Capacity < bufferLengthNeeded)
                     {
                         messageBuffer.Capacity = bufferLengthNeeded;
@@ -581,14 +614,10 @@ namespace ODBCNative
                 resultString.Append(Environment.NewLine);
                 resultString.Append(string.Format("[{0}] [{1}] {2}", eMes.ECode, eMes.ENativeCode, eMes.EMessage));
             }
-            
+
             return new ODBCAPIError(resultString.ToString());
         }
 
-       
-       
         #endregion
-
-       
     }
 }

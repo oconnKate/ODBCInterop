@@ -5,20 +5,16 @@ using ODBCNative;
 
 namespace ODBCCHandles
 {
-//освобождаем неуправляемы ресурсы
-    internal class ODBCHBase : SafeHandle
+    //освобождаем неуправляемы ресурсы
+    public class ODBCHBase : SafeHandle
     {
 
         internal ODBCHType HandleType { get; private set; }
-        internal ODBCHBase(ODBCHType hType)
+        public ODBCHBase(ODBCHType hType)
             : base(IntPtr.Zero, true)
         {
-
             handle = IntPtr.Zero;
             HandleType = hType;
-
-
-
         }
 
         public override bool IsInvalid
@@ -27,19 +23,17 @@ namespace ODBCCHandles
         }
         protected override bool ReleaseHandle()
         {
-
             IntPtr lhandle = handle;
             if (lhandle == IntPtr.Zero)
             { return true; }
             return ODBCMethods.ReleaseHandle(HandleType, lhandle);
-
         }
 
     }
 
-    internal class ODBCHEnvironment : ODBCHBase
+    public class ODBCHEnvironment : ODBCHBase
     {
-        internal ODBCHEnvironment(ODBCVersion version)
+        public ODBCHEnvironment(ODBCVersion version)
             : base(ODBCHType.Environment)
         {
             bool res = ODBCMethods.AllocateHandle(ODBCHType.Environment, IntPtr.Zero, out handle);
@@ -51,9 +45,9 @@ namespace ODBCCHandles
         }
 
     }
-    internal class ODBCHConnection : ODBCHBase
+    public class ODBCHConnection : ODBCHBase
     {
-        internal ODBCHConnection(ODBCHEnvironment eHandle)
+        public ODBCHConnection(ODBCHEnvironment eHandle)
             : base(ODBCHType.Connection)
         {
             bool res = ODBCMethods.AllocateHandle(ODBCHType.Connection, eHandle, out handle);
@@ -61,11 +55,10 @@ namespace ODBCCHandles
         }
 
 
-
     }
-    internal class ODBCHStatement : ODBCHBase
+    public class ODBCHStatement : ODBCHBase
     {
-        internal ODBCHStatement(ODBCHConnection cHandle)
+        public ODBCHStatement(ODBCHConnection cHandle)
             : base(ODBCHType.Statement)
         {
             bool res = ODBCMethods.AllocateHandle(ODBCHType.Statement, cHandle, out handle);

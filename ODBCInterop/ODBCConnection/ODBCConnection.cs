@@ -5,11 +5,22 @@ using System.Linq;
 using System.Text;
 using ODBCCHandles;
 using ODBCErrors;
+using System.Runtime.InteropServices;
 
 namespace ODBCConnection
 {
+    public interface IODBCConnection
+    {
+        void Initialize(ODBCVersion version);
+        bool Connect(string connectionString);
+        List<TableData> GetTableList(string catalogName = "", string schemaName = "", string tableNamePattern = "");
+        List<ColumnDescription> GetColumns(string schemaName, string tableName);
+        List<PrimaryKeyData> GetPrimaryKey(string schemaName, string tableName);
+        Dictionary<string, IndexData> GetIndexData(string schemaName, string tableName);
+    }
+
     //класс для получения информации об источнике данных(таблицы, их структура, индексы и пр.)
-    public class ODBCConnection : IDisposable
+    public class ODBCConnection : IDisposable, IODBCConnection
     {
         internal ODBCHConnection _connectionHandle;
         internal ODBCHEnvironment _enviromentHandle;
@@ -48,7 +59,7 @@ namespace ODBCConnection
             {
                 if (locData.ColumnType == ODBCDataType.Char)
                 {
-                    locData.InternalData.strVal =  ODBCMethods.ReadString(data[locData.ColumnIndex].ColumnData);
+                    locData.InternalData.strVal = ODBCMethods.ReadString(data[locData.ColumnIndex].ColumnData);
                     locData.InternalData.intVal = -1;
                 }
                 if (locData.ColumnType == ODBCDataType.Integer)
@@ -75,8 +86,8 @@ namespace ODBCConnection
                     _connected = false;
 
 #if DEBUG
-                 System.Diagnostics.Trace.Write(e.Message);
-         
+                    System.Diagnostics.Trace.Write(e.Message);
+
 #endif
                 }
 
@@ -93,7 +104,6 @@ namespace ODBCConnection
             }
             _connectionHandle = null;
             _enviromentHandle = null;
-
             _connected = false;
             _initialized = false;
         }
@@ -105,14 +115,12 @@ namespace ODBCConnection
         ~ODBCConnection()
         {
             Close();
-
         }
         #endregion
         #region initialize
         public void Initialize(ODBCVersion version = ODBCVersion.Version2)//по умолчанию используем ODBC 2.0, т.к. работаем с устаревшими БД
         {
             Close();
-
             _enviromentHandle = new ODBCHEnvironment(version);
             _connectionHandle = new ODBCHConnection(_enviromentHandle);
             _initialized = true;
@@ -121,6 +129,7 @@ namespace ODBCConnection
         public bool Connect(string connectionString)
         {
             if (!_initialized) { Initialize(); }
+
             if (ODBCNative.ODBCMethods.ConnectTo(_connectionHandle, connectionString))
             {
                 _connected = true;
@@ -139,7 +148,7 @@ namespace ODBCConnection
         #endregion
         #region data_source_information
         //получение списка таблиц
-        public List<TableData> GetTableList(string catalogName="", string schemaName = "", string tableNamePattern="")
+        public List<TableData> GetTableList(string catalogName = "", string schemaName = "", string tableNamePattern = "")
         {
 
             var _tablesData = new List<TableData>();
@@ -157,10 +166,7 @@ namespace ODBCConnection
                     try
                     {
 
-
-
-
-                        if (ODBCNative.ODBCMethods.GetTables(statement,catalogName, schemaName, tableNamePattern))
+                       if (ODBCNative.ODBCMethods.GetTables(statement, catalogName, schemaName, tableNamePattern))
                         {
                             if (BindColumns(data, statement))
                             {
@@ -172,13 +178,10 @@ namespace ODBCConnection
                                     _tablesData.Add(table);
                                 }
 
-
                             }
                         }
 
                     }
-
-
 
                     finally
                     {
@@ -200,9 +203,6 @@ namespace ODBCConnection
             var _primData = new List<ColumnDescription>();
             if (_initialized)
             {
-
-
-
                 using (ODBCHStatement statement = new ODBCHStatement(_connectionHandle))
                 {
                     List<ODBCData> data = null;
@@ -217,10 +217,14 @@ namespace ODBCConnection
                             {
                                 while (ODBCNative.ODBCMethods.Fetch(statement))
                                 {
-
                                     FillInternalData(ref data);
-                                    var prim = new ColumnDescription(data[0].InternalData.strVal, data[1].InternalData.intVal, data[4].InternalData.strVal, data[2].InternalData.intVal, data[3].InternalData.intVal,data[5].InternalData.intVal);
-                                   _primData.Add(prim);
+                                    //ODBC values only
+                                    if (data[1].InternalData.intVal > 0)
+                                    {
+                                        var prim = new ColumnDescription(data[0].InternalData.strVal, data[1].InternalData.intVal, data[4].InternalData.strVal, data[2].InternalData.intVal, data[3].InternalData.intVal, data[5].InternalData.intVal);
+                                        _primData.Add(prim);
+                                    } 
+                                       
                                 }
 
 
@@ -229,13 +233,10 @@ namespace ODBCConnection
 
                     }
 
-
-
                     finally
                     {
                         foreach (var record in data)
                         {
-
                             record.Dispose();
                         }
                         //  statement.Close();
@@ -245,15 +246,10 @@ namespace ODBCConnection
             }
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
-
-//получение полей первичного ключа
+        //получение полей первичного ключа
         public List<PrimaryKeyData> GetPrimaryKey(string schemaName, string tableName)
         {
-
             var _primData = new List<PrimaryKeyData>();
-
-
-
             if (_initialized)
             {
                 using (ODBCHStatement statement = new ODBCHStatement(_connectionHandle))
@@ -262,18 +258,13 @@ namespace ODBCConnection
                     List<ODBCData> data = null;
                     try
                     {
-
-
-
                         data = BindBuffer(primaryKeyDefinition);
-
                         if (ODBCMethods.GetPrimKey(statement, schemaName, tableName))
                         {
                             if (BindColumns(data, statement))
                             {
                                 while (ODBCMethods.Fetch(statement))
                                 {
-
                                     FillInternalData(ref data);
                                     PrimaryKeyData prim = new PrimaryKeyData(data[0].InternalData.strVal, data[1].InternalData.intVal);
                                     _primData.Add(prim);
@@ -284,9 +275,6 @@ namespace ODBCConnection
                         }
 
                     }
-
-
-
                     finally
                     {
                         foreach (var record in data)
@@ -301,14 +289,11 @@ namespace ODBCConnection
             }
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
-//получение информации об индексах, полях, входящих в них
+        //получение информации об индексах, полях, входящих в них
         public Dictionary<string, IndexData> GetIndexData(string schemaName, string tableName)
         {
 
             var _indexesData = new Dictionary<string, IndexData>();
-
-
-
             const ushort _indexType = 1; //all indexes;
             if (_initialized)
             {
@@ -358,7 +343,6 @@ namespace ODBCConnection
                         }
                     }
 
-
                     finally
                     {
                         foreach (var record in data)
@@ -373,7 +357,32 @@ namespace ODBCConnection
             }
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
-     //оболочка для вызова SQLGetInfo, получение строковой информации об источнике данных   
+        public bool ExecDirect(string sqlStatement)
+        {
+            if (_initialized)
+            {
+                using (ODBCHStatement statement = new ODBCHStatement(_connectionHandle))
+                {
+                    string out_info;
+                    bool result = ODBCNative.ODBCMethods.ExecDirect(statement, sqlStatement, sqlStatement.Length, out out_info);
+                    return result;
+                }
+
+            }
+            return false;
+        }
+        public bool SetConnectionProperty(ODBCHConnection nStatementHandle, short prop, int val)
+        {
+            if (_initialized)
+            {
+
+                return ODBCNative.ODBCMethods.SetConnectionProp(nStatementHandle, prop, val);
+
+
+            }
+            return false;
+        }
+        //оболочка для вызова SQLGetInfo, получение строковой информации об источнике данных   
         public string GetStringInfo(ushort type)
         {
             if (_connected)
@@ -389,10 +398,10 @@ namespace ODBCConnection
         {
             if (_connected)
             {
-             
-            ushort res =0;
-            ODBCNative.ODBCMethods.GetConnectionInfoShort(_connectionHandle,type, out res);
-            return res;
+
+                ushort res = 0;
+                ODBCNative.ODBCMethods.GetConnectionInfoShort(_connectionHandle, type, out res);
+                return res;
             }
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
@@ -406,17 +415,17 @@ namespace ODBCConnection
             }
             StringBuilder serverName = new StringBuilder();
             StringBuilder description = new StringBuilder();
-            var result = ODBCMethods.GetDataSources(_enviromentHandle,ODBCConstants.SQL_FETCH_FIRST,out serverName, out description); 
-           if ((result!=ODBCResult.Error)&&(result!=ODBCResult.InvalidHandle))
-           {
-               while (result != ODBCResult.NoData)
-               {
-                   var source = new ODBCSources(serverName.ToString(),description.ToString());
-                   list.Add(source);
-                   result = ODBCMethods.GetDataSources(_enviromentHandle, ODBCConstants.SQL_FETCH_NEXT, out serverName, out description); 
-               }
-           }
-           return list;
+            var result = ODBCMethods.GetDataSources(_enviromentHandle, ODBCConstants.SQL_FETCH_FIRST, out serverName, out description);
+            if ((result != ODBCResult.Error) && (result != ODBCResult.InvalidHandle))
+            {
+                while (result != ODBCResult.NoData)
+                {
+                    var source = new ODBCSources(serverName.ToString(), description.ToString());
+                    list.Add(source);
+                    result = ODBCMethods.GetDataSources(_enviromentHandle, ODBCConstants.SQL_FETCH_NEXT, out serverName, out description);
+                }
+            }
+            return list;
         }
         #endregion
     }

@@ -1,6 +1,6 @@
 ﻿namespace ODBCNative
 {
-    //часть констант из sql.h,sqlext.h
+    //defined in sql.h,sqlext.h
     public static class ODBCConstants
     {
         #region handles
@@ -11,12 +11,12 @@
         #region enviroment_attributes
         public const int SQL_ATTR_ODBC_VERSION = 200;
         public const int SQL_ATTR_CONNECTION_POOLING = 201;
-         public const int SQL_ATTR_CP_MATCH = 202;
+        public const int SQL_ATTR_CP_MATCH = 202;
         #endregion
-         #region versions
-         public const int SQL_OV_ODBC3 = 3;
+        #region versions
+        public const int SQL_OV_ODBC3 = 3;
         public const int SQL_OV_ODBC2 = 2;
-#endregion
+        #endregion
         #region results
         public const int SQL_SUCCESS = 0;
         public const int SQL_SUCCESS_WITH_INFO = 1;
@@ -24,7 +24,7 @@
         public const int SQL_ERROR = -1;
         public const int SQL_INVALID_HANDLE = -2;
         public const int SQL_NEED_DATA = 99;
- public const int SQL_NULL_DATA = -1;
+        public const int SQL_NULL_DATA = -1;
         public const int SQL_NO_TOTAL = -4;
         #endregion
         #region types
@@ -53,7 +53,7 @@
         public const ushort SQL_STATE_LEN = 5;
         public const int SQL_FETCH_NEXT = 1;
         public const int SQL_FETCH_FIRST = 2;
-        public const int SQL_FETCH_FIRST_USER =31;
+        public const int SQL_FETCH_FIRST_USER = 31;
         public const int SQL_FETCH_FIRST_SYSTEM = 32;
         public const int MAX_DSN_LENGTH = 32;
         #endregion
@@ -70,5 +70,5 @@
 
 
     }
-       
+
 }

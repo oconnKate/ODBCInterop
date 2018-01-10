@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>ISSTE.ODBCInterop</id>
-    <version>1.0</version>
+    <version>1.1</version>
     <authors>EStepanova</authors>
     <description>utility to direct ODBC function call</description>
    </metadata>

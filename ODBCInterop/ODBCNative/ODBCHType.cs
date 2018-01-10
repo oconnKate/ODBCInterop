@@ -1,10 +1,10 @@
 ﻿namespace ODBCNative
 {
-    internal enum ODBCHType  // Defined in sql.h
+    public enum ODBCHType  // Defined in sql.h
     {
-        Environment = 1,  // SQL_HANDLE_ENV
-        Connection = 2,   // SQL_HANDLE_DBC
-        Statement = 3     // SQL_HANDLE_STMT
+        Environment = 1,  
+        Connection = 2,   
+        Statement = 3    
     }
 
 }
