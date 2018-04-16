@@ -2,3 +2,6 @@ c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Debug\ODBCInterop.pdb
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Debug\ODBCInterop.dll
 c:\users\continent\documents\visual studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Debug\ODBCInterop.pdb
+C:\Users\continent\Documents\Visual Studio 2012\Projects\ODBCInterop\ODBCInterop\obj\Debug\ODBCInterop.csprojResolveAssemblyReference.cache
+C:\Users\continent\Documents\Visual Studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Debug\nunit.framework.dll
+C:\Users\continent\Documents\Visual Studio 2012\Projects\ODBCInterop\ODBCInterop\bin\Debug\nunit.framework.xml

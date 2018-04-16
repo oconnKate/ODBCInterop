@@ -220,6 +220,37 @@ namespace ODBCNative
                string ValuePtr,
                int eExpression
                 );
+            [DllImport("odbc32.dll", SetLastError = false)]
+            //установка атрибутов соединения
+            //строковое значение атрибута
+            public static extern ODBCResult SQLDescribeCol(
+              ODBCHStatement nStatementHandle,
+               short ColumnNumber,
+              [MarshalAs(UnmanagedType.LPStr) ]ref String ColumnName,
+               short BufferLength,
+                out short NameLengthPtr,
+               out  short DataTypePtr,
+               out int ColumnSizePtr,
+               out short DecimalDigitsPtr,
+               out short NullablePtr
+                 );
+            [DllImport("odbc32.dll", SetLastError = false)]
+            //информация о полях в составе  внешних ключей
+             public static extern ODBCResult SQLForeignKeys(
+              ODBCHStatement StatementHandle,
+                string PKCatalogName,
+                short NameLength1,
+                string PKSchemaName,
+                short NameLength2,
+                string PKTableName,
+                short NameLength3,
+               string FKCatalogName,
+                short NameLength4,
+                string FKSchemaName,
+                short NameLength5,
+                string FKTableName,
+                short NameLength6
+                 );
             #endregion
         }
 
@@ -233,7 +264,9 @@ namespace ODBCNative
 
         internal static short ReadShort(IntPtr pointer)
         {
-            if (pointer == IntPtr.Zero) throw new ArgumentNullException("Null pointer in read int operation"); return Marshal.ReadInt16(pointer);
+            if (pointer == IntPtr.Zero) throw new ArgumentNullException("Null pointer in read int operation");
+           
+            return Marshal.ReadInt16(pointer);
         }
         internal static bool AllocateHandle(ODBCHType handleType, IntPtr inputHandle, out IntPtr outputHandle)
         {
@@ -556,7 +589,27 @@ namespace ODBCNative
             }
             return true;
         }
+        public static bool DescribeCol(ODBCHStatement nStatementHandle, short ColumnNumber, ref String ColumnName, short BufferLength, out short NameLengthPtr, out  short DataTypePtr, out int ColumnSizePtr, out short DecimalDigitsPtr, out short NullablePtr)
+        {
+            var result = ODBCNativeMethods.SQLDescribeCol(nStatementHandle,  ColumnNumber, ref ColumnName,  BufferLength, out  NameLengthPtr, out   DataTypePtr, out  ColumnSizePtr, out  DecimalDigitsPtr, out  NullablePtr);
 
+            if (result != ODBCResult.Success)
+            {
+                throw GetException(nStatementHandle, "Unnable to set connection property ");
+            }
+            return true;
+        }
+        internal static bool GetForeignKeys(ODBCHStatement nStatementHandle,string PKCatalogName,  string PKSchemaName,  string PKTableName,  string FKCatalogName,  string FKSchemaName, string FKTableName)
+        {
+            var result = ODBCNativeMethods.SQLForeignKeys(nStatementHandle, PKCatalogName, (short)PKCatalogName.Length, PKSchemaName, (short)PKSchemaName.Length, PKTableName, (short)PKTableName.Length, FKCatalogName, (short)FKCatalogName.Length, FKSchemaName, (short)FKSchemaName.Length, FKTableName, (short)FKTableName.Length);
+         if (result != ODBCResult.Success)
+            {
+                throw GetException(nStatementHandle, "Unnable to set connection property ");
+            }
+            return true;        
+            
+           
+        }
         #endregion
 
         #region exceptions

@@ -68,6 +68,13 @@
         public const int SQL_CP_OFF = 0;
         #endregion
 
+        #region ForeingKeyAction
+        public const int SQL_CASCADE = 0;
+        public const int SQL_NO_ACTION = 3;
+        public const int SQL_SET_NULL = 2;
+        public const int SQL_RESTRICT = 1;
+        public const int SQL_SET_DEFAULT = 4;
+        #endregion
 
     }
 

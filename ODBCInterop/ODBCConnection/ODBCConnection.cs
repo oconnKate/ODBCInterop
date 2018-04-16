@@ -15,8 +15,8 @@ namespace ODBCConnection
         bool Connect(string connectionString);
         List<TableData> GetTableList(string catalogName = "", string schemaName = "", string tableNamePattern = "");
         List<ColumnDescription> GetColumns(string schemaName, string tableName);
-        List<PrimaryKeyData> GetPrimaryKey(string schemaName, string tableName);
-        Dictionary<string, IndexData> GetIndexData(string schemaName, string tableName);
+        IndexData GetPrimaryKey(string schemaName, string tableName);
+        List<IndexData> GetIndexData(string schemaName, string tableName);
     }
 
     //класс для получения информации об источнике данных(таблицы, их структура, индексы и пр.)
@@ -81,7 +81,7 @@ namespace ODBCConnection
 
                     ODBCNative.ODBCMethods.Disconnect(_connectionHandle);
                 }
-                catch (ODBCAPIError e)
+                catch (ODBCAPIError e )
                 {
                     _connected = false;
 
@@ -166,7 +166,7 @@ namespace ODBCConnection
                     try
                     {
 
-                       if (ODBCNative.ODBCMethods.GetTables(statement, catalogName, schemaName, tableNamePattern))
+                        if (ODBCNative.ODBCMethods.GetTables(statement, catalogName, schemaName, tableNamePattern))
                         {
                             if (BindColumns(data, statement))
                             {
@@ -215,16 +215,19 @@ namespace ODBCConnection
                         {
                             if (BindColumns(data, statement))
                             {
+
                                 while (ODBCNative.ODBCMethods.Fetch(statement))
                                 {
                                     FillInternalData(ref data);
+
+
                                     //ODBC values only
                                     if (data[1].InternalData.intVal > 0)
                                     {
                                         var prim = new ColumnDescription(data[0].InternalData.strVal, data[1].InternalData.intVal, data[4].InternalData.strVal, data[2].InternalData.intVal, data[3].InternalData.intVal, data[5].InternalData.intVal);
                                         _primData.Add(prim);
-                                    } 
-                                       
+                                    }
+
                                 }
 
 
@@ -247,9 +250,9 @@ namespace ODBCConnection
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
         //получение полей первичного ключа
-        public List<PrimaryKeyData> GetPrimaryKey(string schemaName, string tableName)
+        public IndexData GetPrimaryKey(string schemaName, string tableName)
         {
-            var _primData = new List<PrimaryKeyData>();
+            var _primData = new IndexData();
             if (_initialized)
             {
                 using (ODBCHStatement statement = new ODBCHStatement(_connectionHandle))
@@ -266,8 +269,11 @@ namespace ODBCConnection
                                 while (ODBCMethods.Fetch(statement))
                                 {
                                     FillInternalData(ref data);
-                                    PrimaryKeyData prim = new PrimaryKeyData(data[0].InternalData.strVal, data[1].InternalData.intVal);
-                                    _primData.Add(prim);
+                                    _primData.SetData(0,"");
+                                    ColumnData _cd = new ColumnData(data[0].InternalData.strVal, data[1].InternalData.intVal, true);
+                                    _primData.AddColumnData(_cd);
+                                    //PrimaryKeyData prim = new PrimaryKeyData(data[0].InternalData.strVal, data[1].InternalData.intVal);
+                                   // _primData.Add(prim);
                                 }
 
 
@@ -290,10 +296,10 @@ namespace ODBCConnection
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
         }
         //получение информации об индексах, полях, входящих в них
-        public Dictionary<string, IndexData> GetIndexData(string schemaName, string tableName)
+        public List<IndexData> GetIndexData(string schemaName, string tableName)
         {
 
-            var _indexesData = new Dictionary<string, IndexData>();
+            var _indexesData = new List<IndexData>();
             const ushort _indexType = 1; //all indexes;
             if (_initialized)
             {
@@ -309,34 +315,34 @@ namespace ODBCConnection
                         {
                             if (BindColumns(data, statement))
                             {
-                                while (ODBCNative.ODBCMethods.Fetch(statement))
+                                bool fetched = ODBCNative.ODBCMethods.Fetch(statement);
+                                while (fetched)
                                 {
-                                    int _unique = ODBCMethods.ReadShort(data[0].ColumnData);
-                                    if ((_unique == ODBCNative.ODBCConstants.SQL_IS_INDEX_UNIQUE) | (_unique == ODBCNative.ODBCConstants.SQL_IS_INDEX_DUPLICATE))
+                                    FillInternalData(ref data);
+                                    string indexName = data[1].InternalData.strVal;
+                                    if (indexName.Length > 1)
                                     {
-                                        FillInternalData(ref data);
-                                        string indexName = data[1].InternalData.strVal;
-                                        Action newItem = new Action(() =>
-                                        {
-                                            IndexData _indexData = new IndexData();
-                                            _indexData.SetData(data[0].InternalData.intVal, data[1].InternalData.strVal, data[4].InternalData.strVal);
-                                            ColumnData cd = new ColumnData(data[3].InternalData.strVal, data[2].InternalData.intVal);
-                                            _indexData.AddColumnData(cd);
-                                            _indexesData.Add(indexName, _indexData);
-                                        });
+                                        IndexData _indexData = new IndexData();
+                                        _indexData.SetData(data[0].InternalData.intVal, data[1].InternalData.strVal);
 
-                                        IndexData _indexDataLoc;
-                                        if (_indexesData.TryGetValue(indexName, out _indexDataLoc))
+                                        while ((fetched) & (indexName.Equals(data[1].InternalData.strVal)))
                                         {
-                                            ColumnData cd = new ColumnData(data[3].InternalData.strVal, data[2].InternalData.intVal);
-                                            _indexDataLoc.AddColumnData(cd);
-                                        }
-                                        else
-                                        {
+                                          
+                                            int _unique = ODBCMethods.ReadShort(data[0].ColumnData);
+                                            if ((_unique == ODBCNative.ODBCConstants.SQL_IS_INDEX_UNIQUE) | (_unique == ODBCNative.ODBCConstants.SQL_IS_INDEX_DUPLICATE))
+                                            {
+                                                bool asc = (data[4].InternalData.strVal == "A");
+                                                ColumnData cd = new ColumnData(data[3].InternalData.strVal, data[2].InternalData.intVal, asc);
+                                                _indexData.AddColumnData(cd);
 
-                                            newItem();
+                                            }
+                                            fetched = ODBCNative.ODBCMethods.Fetch(statement);
+                                           if (fetched) FillInternalData(ref data);
                                         }
+
+                                        _indexesData.Add(_indexData);
                                     }
+                                    else fetched = ODBCNative.ODBCMethods.Fetch(statement);
                                 }
                             }
 
@@ -350,12 +356,70 @@ namespace ODBCConnection
 
                             record.Dispose();
                         }
-                        //      statement.Close();
+
                     }
                 }
                 return _indexesData;
             }
             else { throw new ODBCErrorNotInitialized("You must connect to database!"); }
+        }
+        //получение информации о внешних ключах
+        public List<ForeignKeyDescription> GetForeingKeys(string pkCatalogName, string pkSchemaName, string pkTableName, string fkCatalogName, string fkSchemaName, string fkTableName)
+        {
+            var foreignKeyData = new List<ForeignKeyDescription>();
+            if (_initialized)
+            {
+                using (ODBCHStatement statement = new ODBCHStatement(_connectionHandle))
+                {
+                    List<ODBCData> data = null;
+                    ForeignKeysStatementDefinition foreignStatementDefinition = new ForeignKeysStatementDefinition();
+
+                    try
+                    {
+                        data = BindBuffer(foreignStatementDefinition);
+                        if (ODBCNative.ODBCMethods.GetForeignKeys(statement, pkCatalogName, pkSchemaName, pkTableName, fkCatalogName, fkSchemaName, fkTableName))
+                        {
+                            if (BindColumns(data, statement))
+                            {
+                                bool fetched = ODBCNative.ODBCMethods.Fetch(statement);
+
+                               while (fetched)
+                                {
+                                    List<string> _fkColumns = new List<string>();
+                                    List<string> _pkColumns = new List<string>();
+                                    string _fkName = ODBCMethods.ReadString(data[11].ColumnData);
+                                    string _pkName = ODBCMethods.ReadString(data[12].ColumnData);
+                                    short _updateRule = ODBCMethods.ReadShort(data[9].ColumnData);
+                                    short _deleteRule = ODBCMethods.ReadShort(data[10].ColumnData);
+
+                                    while ((fetched) & (_fkName == ODBCMethods.ReadString(data[11].ColumnData)))
+                                    {
+                                        string _pkcolumnName = ODBCMethods.ReadString(data[3].ColumnData);
+                                        string _fkcolumnName = ODBCMethods.ReadString(data[7].ColumnData);
+                                        _fkColumns.Add(_fkcolumnName);
+                                        _pkColumns.Add(_pkcolumnName);
+                                        fetched = ODBCNative.ODBCMethods.Fetch(statement);
+                                    }
+                                    ForeignKeyDescription _fkd = new ForeignKeyDescription(_fkName, _pkName, _pkColumns, _fkColumns, _updateRule, _deleteRule);
+                                    foreignKeyData.Add(_fkd);
+
+                                }
+                            }
+
+
+
+                        }
+                    }
+                    finally
+                    {
+                        foreach (var record in data)
+                        {
+                            record.Dispose();
+                        }
+                    }
+                }
+            }
+            return foreignKeyData;
         }
         public bool ExecDirect(string sqlStatement)
         {
@@ -375,10 +439,7 @@ namespace ODBCConnection
         {
             if (_initialized)
             {
-
                 return ODBCNative.ODBCMethods.SetConnectionProp(nStatementHandle, prop, val);
-
-
             }
             return false;
         }
@@ -398,7 +459,6 @@ namespace ODBCConnection
         {
             if (_connected)
             {
-
                 ushort res = 0;
                 ODBCNative.ODBCMethods.GetConnectionInfoShort(_connectionHandle, type, out res);
                 return res;
