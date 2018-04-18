@@ -8,6 +8,7 @@ using ODBCErrors;
 using System.Runtime.InteropServices;
 
 namespace ODBCConnection
+
 {
     public interface IODBCConnection
     {
